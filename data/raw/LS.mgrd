@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SAGA_METADATA>
+  <HISTORY saga-version="2.3.2">
+    <MODULE library="ta_hydrology" id="25" name="LS-Factor, Field Based">
+      <OPTION type="grid_system" id="PARAMETERS_GRID_SYSTEM" name="Grid system">
+        <CELLSIZE>21.508318729599999</CELLSIZE>
+        <XMIN>397823.3916593713</XMIN>
+        <XMAX>452196.4214078001</XMAX>
+        <YMIN>5935914.606459365</YMIN>
+        <YMAX>5975511.421240559</YMAX>
+      </OPTION>
+      <OPTION type="choice" id="METHOD" name="LS Calculation" index="1">Desmet &amp; Govers 1996</OPTION>
+      <OPTION type="choice" id="METHOD_SLOPE" name="Type of Slope" index="0">local slope</OPTION>
+      <OPTION type="choice" id="METHOD_AREA" name="Specific Catchment Area" index="2">catchment length (square root of catchment area)</OPTION>
+      <OPTION type="boolean" id="STOP_AT_EDGE" name="Stop at Edge">TRUE</OPTION>
+      <OPTION type="double" id="EROSIVITY" name="Rill/Interrill Erosivity">1.000000</OPTION>
+      <OPTION type="choice" id="STABILITY" name="Stability" index="1">instable (thawing)</OPTION>
+      <INPUT type="grid" id="DEM" name="Elevation" system="PARAMETERS_GRID_SYSTEM">
+        <MODULE library="io_gdal" id="0" name="Import Raster">
+          <OPTION type="file" id="FILES" name="Files">"C:\Users\ATSYPLENKOV\YandexDisk\GIT\upa-erosion\data\tidy\dem_f.tif"</OPTION>
+          <OPTION type="text" id="SELECTION" name="Select from Multiple Bands">
+            <OGC_WKT>PROJCS["WGS 84 / UTM zone 37N",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",39],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","32637"]]</OGC_WKT>
+            <PROJ4>+init=epsg:32637 +proj=tmerc +a=6378137.000000 +b=6356752.314245 +lat_0=0 +lon_0=39 +k_0=0.9996 +x_0=500000 +y_0=0 +no_defs</PROJ4>
+            <EPSG>-1</EPSG>
+          </OPTION>
+          <OPTION type="boolean" id="SELECT_SORT" name="Alphanumeric Sorting">TRUE</OPTION>
+          <OPTION type="boolean" id="TRANSFORM" name="Transformation">TRUE</OPTION>
+          <OPTION type="choice" id="RESAMPLING" name="Resampling" index="3">B-Spline Interpolation</OPTION>
+          <OUTPUT type="grid_list" id="GRIDS" name="Grids">dem_f</OUTPUT>
+        </MODULE>
+      </INPUT>
+      <OUTPUT type="grid" id="LS_FACTOR" name="LS Factor">LS Factor</OUTPUT>
+    </MODULE>
+  </HISTORY>
+  <SOURCE>
+    <FILE>C:\Users\ATSYPLENKOV\YandexDisk\GIT\upa-erosion\data\raw\LS.sgrd</FILE>
+    <DATABASE></DATABASE>
+    <PROJECTION>
+      <OGC_WKT>PROJCS["WGS 84 / UTM zone 37N",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",39],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","32637"]]</OGC_WKT>
+      <PROJ4>+init=epsg:32637 +proj=tmerc +a=6378137.000000 +b=6356752.314245 +lat_0=0 +lon_0=39 +k_0=0.9996 +x_0=500000 +y_0=0 +no_defs</PROJ4>
+      <EPSG>-1</EPSG>
+    </PROJECTION>
+  </SOURCE>
+  <DESCRIPTION></DESCRIPTION>
+</SAGA_METADATA>

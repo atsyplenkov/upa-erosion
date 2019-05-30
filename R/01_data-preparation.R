@@ -31,3 +31,9 @@ meteo %<>%
   mutate_at(vars(lat, lon, H),
             list(~as.numeric(sub(",", ".", ., fixed = TRUE))))
 
+meteo %<>% 
+  st_as_sf(coords = c("lon", "lat"),
+           crs = 4326,
+           remove = F)
+
+mapview::mapview(meteo)
