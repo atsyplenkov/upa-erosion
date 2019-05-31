@@ -17,6 +17,10 @@ library(sf)
 library(elevatr)
 library(spgrass6)
 library(raster)
+library(extrafont)
+
+source("https://raw.githubusercontent.com/atsyplenkov/caucasus-sediment-yield/master/R/00_own-functions.R")
+
 
 # 1) Basin
 c_factor <- st_read("data/spatial/lulc/Landuse1985_2/Landuse_1985_var2.shp")
@@ -111,52 +115,84 @@ egrpr %<>%
 st_write(egrpr, "data/tidy/upa_K.shp", delete_dsn = T)
 
 # 5) R-factor
-glored <- raster("/WORK/00_GLOBAL/GlobalR/GlobalR_NoPol.tif")
+# Read meteo archive from 1966  to 2017-----
+# WMO ID: 27814
+# Source: http://aisori.meteo.ru/ClimateR
+meteo <- read.csv("data/raw/SCH91.txt",
+                  sep = ";",
+                  header = F,
+                  dec = ".")
 
-R_upa <- raster::mask(glored, 
-                      upa %>% 
-                        st_transform(projection(glored)) %>% 
-                        as_Spatial())
+meteo <- meteo[c(2:4, 8, 12)]
+colnames(meteo) <- c("year", "month", "day", "TTT", "RRR")
 
-# Select Meteostations
-sf::st_bbox(st_transform(upa, 4326))
+meteo %<>%  
+  mutate(date = glue::glue("{year}-{month}-{day}"),
+         date = as.character(date),
+         date = as.Date(strptime(date, "%Y-%m-%d")),
+         year = lubridate::floor_date(date, "year"),
+         year = str_extract(as.character(year), "\\d{1,4}"),
+         year = as.integer(year)) %>% 
+  dplyr::select(date, year, RRR, TTT) %>% 
+  as_tibble() 
 
-library(worldmet)
-getMeta(country = "RS")
-
-# Download meteo data
-tula <- importNOAA(code = "277190-99999",
-                   precip = T,
-                   year = 1959:2019,
-                   parallel = 2)
-
-kaluga <- importNOAA(code = "277030-99999",
-                     precip = T,
-                     year = 1932:2019,
-                     parallel = 2)
-
-UZLOVAJA <- importNOAA(code = "278210-99999",
-                       precip = T,
-                       year = 2003:2019,
-                       parallel = 2)
-
-MCENSK <- importNOAA(code = "278170-99999",
-                     precip = T,
-                     year = 1991:2019,
-                     parallel = 2)
-
-efremov <- importNOAA(code = "279210-99999",
-                     precip = T,
-                     year = 1959:2019,
-                     parallel = 2)
-
-SUHINICHI <- importNOAA(code = "277070-99999",
-                        precip = T,
-                        year = 1959:2019,
-                        parallel = 2)
-
-kaluga %>% 
-  mutate(year = year(date)) %>% 
-  filter(year > 1963) %>% 
+meteo %<>% 
+  filter(TTT > 2, RRR >= 1) %>% 
   group_by(year) %>% 
-  summarise(sum(precip, na.rm = T)) %>% View
+  summarise(P = sum(RRR),
+            n = n(),
+            SDII = P/n,
+            logR = -0.5 + 0.266 * log10(P) + 3.1 * log10(SDII) - 0.131 * log10(240),
+            R = 10^logR)
+
+meteo %>% 
+  dplyr::select(P, R, year) %>% 
+  gather(variable, value, -year) %>% 
+  ggplot(aes(y = value, x = year)) +
+  geom_line(aes(color = variable),
+            size = .8,
+            alpha = .8,
+            na.rm = T) +
+  geom_smooth(aes(color = variable),
+              method = "lm", se = F, linetype = "dashed") +
+  geom_vline(xintercept = 1986,
+             linetype = "dashed") +
+  annotate("text", x = 1983, y = 620, label = "1986 г.", vjust = -0.2) +
+  geom_curve(aes(x = 1983, y = 620, xend = 1985.5, yend = 500),
+             curvature = 0.2,
+             size = 0.2,
+             arrow = arrow(
+               length = unit(0.01, "npc")
+             )) +
+  labs(x = "") +
+  ggsci::scale_color_lancet(name = "",
+                            labels = c("Годовая сумма осадков",
+                                      "Эрозионный Потенциал Осадков")) +
+  scale_x_continuous(breaks = seq(1963, 2018, 10)) +
+  scale_y_continuous(name = "Годовая суммая осадков, мм",
+                     sec.axis = sec_axis(~.,
+                                         name = expression(italic("ЭПО")*~"МДж"%.%"мм"%.%"ч"^"-1"%.%"га"^"-1"%.%"год"^"-1"))) +
+  theme_clean() -> upa_meteo
+
+ggsave("figures/upa_meteo-graph.png",
+       upa_meteo, dpi = 500,
+       w = 8, h = 5)  
+
+# 6) OSM data
+rivers <- st_read("/WORK/00_GLOBAL/OSM/Central_may2019/gis_osm_waterways_free_1.shp")
+
+rivers %<>% 
+  st_intersection(st_transform(upa, projection(.))) %>% 
+  st_transform(32637) %>% 
+  st_buffer(10)
+
+lakes <- st_read("/WORK/00_GLOBAL/OSM/Central_may2019/gis_osm_water_a_free_1.shp")
+
+lakes %<>% 
+  st_intersection(st_transform(upa, projection(.))) %>% 
+  st_transform(32637)
+
+water <- rbind(lakes, rivers %>% dplyr::select(-width)) %>% 
+  st_union()
+
+st_write(water, "data/tidy/osm_water.shp", delete_dsn = T)
